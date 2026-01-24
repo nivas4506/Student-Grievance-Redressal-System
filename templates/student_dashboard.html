@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Dashboard - Grievance System{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Welcome, {{ user.name }}!</h2>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ stats.total }}</h3>
+            <p>Total</p>
+        </div>
+        <div class="stat-card" style="background: #333;">
+            <h3>{{ stats.pending }}</h3>
+            <p>Pending</p>
+        </div>
+        <div class="stat-card" style="background: #555;">
+            <h3>{{ stats.in_progress }}</h3>
+            <p>In Progress</p>
+        </div>
+        <div class="stat-card" style="background: #777;">
+            <h3>{{ stats.resolved }}</h3>
+            <p>Resolved</p>
+        </div>
+    </div>
+    
+    <a href="{{ url_for('submit_grievance') }}" class="btn btn-primary">+ Submit New Grievance</a>
+</div>
+
+<div class="card">
+    <h2>My Grievances</h2>
+    
+    {% if grievances %}
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in grievances %}
+            <tr>
+                <td>#{{ g.id }}</td>
+                <td>{{ g.category }}</td>
+                <td>{{ g.description[:50] }}{% if g.description|length > 50 %}...{% endif %}</td>
+                <td>
+                    <span class="status status-{{ g.status|lower|replace(' ', '-') }}">
+                        {{ g.status }}
+                    </span>
+                </td>
+                <td>{{ g.created_at[:10] }}</td>
+                <td>
+                    <a href="{{ url_for('view_grievance', gid=g.id) }}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85rem;">View</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="text-align: center; color: #666; padding: 40px;">
+        No grievances submitted yet. <a href="{{ url_for('submit_grievance') }}">Submit your first grievance</a>
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

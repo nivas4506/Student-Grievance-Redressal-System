@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Grievance System{% endblock %}
+
+{% block content %}
+<div class="card text-center" style="max-width: 600px; margin: 100px auto;">
+    <h2 style="border: none; text-align: center;">Student Grievance Redressal System</h2>
+    <p style="color: #666; margin-bottom: 30px;">A platform for students to voice concerns and get them addressed by administration.</p>
+    
+    <div style="display: flex; gap: 20px; justify-content: center;">
+        <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+        <a href="{{ url_for('register') }}" class="btn btn-success">Register as Student</a>
+    </div>
+    
+    <hr style="margin: 30px 0;">
+    
+    <p style="color: #888; font-size: 0.9rem;">
+        <strong>Default Admin:</strong> admin@college.com / admin
+    </p>
+</div>
+{% endblock %}

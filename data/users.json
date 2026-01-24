@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "name": "Admin",
+        "email": "admin@college.com",
+        "password": "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
+        "role": "admin",
+        "created_at": "2026-01-24"
+    },
+    {
+        "id": 2,
+        "name": "bvsnivas",
+        "email": "bvsnivaschowdary@gmail.com",
+        "password": "10eda5bdc863654f7cf7fae5b5205704e43f384a4c53d2843f3a319450f343f8",
+        "role": "student",
+        "created_at": "2026-01-24"
+    }
+]

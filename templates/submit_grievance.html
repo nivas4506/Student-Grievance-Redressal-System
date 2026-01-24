@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}Submit Grievance - Grievance System{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 30px auto;">
+    <h2>Submit New Grievance</h2>
+    
+    <form method="POST">
+        <div class="form-group">
+            <label for="category">Category</label>
+            <select id="category" name="category" required>
+                <option value="">-- Select Category --</option>
+                {% for cat in categories %}
+                <option value="{{ cat }}">{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" rows="6" required 
+                      placeholder="Describe your grievance in detail (minimum 10 characters)"></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 15px;">
+            <button type="submit" class="btn btn-success">Submit Grievance</button>
+            <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

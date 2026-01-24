@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Grievance #{{ grievance.id }} - Grievance System{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 30px auto;">
+    <h2>Grievance #{{ grievance.id }}</h2>
+    
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <p><strong>Category:</strong> {{ grievance.category }}</p>
+        <p><strong>Status:</strong> 
+            <span class="status status-{{ grievance.status|lower|replace(' ', '-') }}">
+                {{ grievance.status }}
+            </span>
+        </p>
+        <p><strong>Submitted On:</strong> {{ grievance.created_at }}</p>
+        {% if grievance.updated_at %}
+        <p><strong>Last Updated:</strong> {{ grievance.updated_at }}</p>
+        {% endif %}
+        {% if grievance.resolved_at %}
+        <p><strong>Resolved On:</strong> {{ grievance.resolved_at }}</p>
+        {% endif %}
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+        <h3 style="color: #333; margin-bottom: 10px;">Description</h3>
+        <div style="background: #fff; border: 1px solid #ddd; padding: 15px; border-radius: 5px; white-space: pre-wrap;">{{ grievance.description }}</div>
+    </div>
+    
+    <div style="margin-bottom: 20px;">
+        <h3 style="color: #333; margin-bottom: 10px;">Admin Response</h3>
+        {% if grievance.response %}
+        <div style="background: #e8e8e8; border: 1px solid #999; padding: 15px; border-radius: 5px; white-space: pre-wrap;">
+            {{ grievance.response }}
+        </div>
+        {% else %}
+        <div style="background: #f5f5f5; border: 1px solid #ccc; padding: 15px; border-radius: 5px; white-space: pre-wrap;">
+            <em style="color: #888;">No response yet. Please wait for admin to review your grievance.</em>
+        </div>
+        {% endif %}
+    </div>
+    
+    <a href="{{ url_for('student_dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+{% endblock %}

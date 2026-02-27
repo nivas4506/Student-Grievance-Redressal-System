@@ -80,7 +80,7 @@ A web-based application for students to submit grievances and administrators to 
 
 | Role    | Email              | Password |
 |---------|--------------------|----------|
-| Admin   | admin@college.com  | admin    |
+| Admin   | admin@college.com  | 123456   |
 | Student | Register new account | -      |
 
 ## Grievance Categories

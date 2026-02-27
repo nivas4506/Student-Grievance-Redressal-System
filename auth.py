@@ -1,12 +1,13 @@
 """
 Authentication Module
 Handles user registration and login functionality.
-Demonstrates: Functions, hashlib, data structures (dictionaries)
+Demonstrates: Functions, hashlib, OOP integration, data structures (dictionaries)
 """
 
 import hashlib
 from datetime import date
 from file_handler import load_users, save_users, get_next_user_id
+from models import Student, Admin
 
 
 def hash_password(password):
@@ -18,6 +19,8 @@ def hash_password(password):
         
     Returns:
         str: Hashed password
+        
+    Demonstrates: hashlib module, string encoding
     """
     return hashlib.sha256(password.encode()).hexdigest()
 
@@ -31,6 +34,8 @@ def validate_email(email):
         
     Returns:
         bool: True if valid format, False otherwise
+        
+    Demonstrates: String operations, conditional logic
     """
     if '@' in email and '.' in email and len(email) > 5:
         return True
@@ -46,6 +51,8 @@ def email_exists(email):
         
     Returns:
         bool: True if exists, False otherwise
+        
+    Demonstrates: List iteration, string comparison
     """
     users = load_users()
     for user in users:
@@ -54,18 +61,21 @@ def email_exists(email):
     return False
 
 
-def register_user(name, email, password, role="student"):
+def register_user(name, email, password, role="student", dept="General"):
     """
-    Register a new user in the system.
+    Register a new user in the system using OOP classes.
     
     Args:
         name (str): User's full name
         email (str): User's email address
         password (str): User's password
         role (str): User role - 'student' or 'admin'
+        dept (str): Department name (for students)
         
     Returns:
         tuple: (success: bool, message: str)
+        
+    Demonstrates: OOP object creation, validation, file storage
     """
     # Validate inputs
     if not name or len(name) < 2:
@@ -80,19 +90,32 @@ def register_user(name, email, password, role="student"):
     if len(password) < 4:
         return False, "Password must be at least 4 characters."
     
-    # Create user dictionary
-    users = load_users()
-    new_user = {
-        "id": get_next_user_id(),
-        "name": name.strip(),
-        "email": email.lower().strip(),
-        "password": hash_password(password),
-        "role": role,
-        "created_at": str(date.today())
-    }
+    # Create user object using OOP classes
+    user_id = get_next_user_id()
+    password_hash = hash_password(password)
     
-    # Add to users list and save
-    users.append(new_user)
+    if role == "admin":
+        user_obj = Admin(
+            admin_id=user_id,
+            name=name.strip(),
+            email=email.lower().strip(),
+            password=password_hash
+        )
+    else:
+        user_obj = Student(
+            student_id=user_id,
+            name=name.strip(),
+            email=email.lower().strip(),
+            password=password_hash,
+            dept=dept
+        )
+    
+    # Convert to dict and save
+    users = load_users()
+    user_dict = user_obj.to_dict()
+    user_dict['created_at'] = str(date.today())
+    users.append(user_dict)
+    
     if save_users(users):
         return True, f"Registration successful! Welcome, {name}."
     else:
@@ -109,6 +132,8 @@ def login_user(email, password):
         
     Returns:
         tuple: (success: bool, user_data: dict or error_message: str)
+        
+    Demonstrates: Authentication, password hashing comparison
     """
     users = load_users()
     hashed_password = hash_password(password)
@@ -121,7 +146,8 @@ def login_user(email, password):
                     "id": user['id'],
                     "name": user['name'],
                     "email": user['email'],
-                    "role": user['role']
+                    "role": user['role'],
+                    "dept": user.get('dept', 'General')
                 }
                 return True, user_data
             else:
@@ -147,6 +173,8 @@ def get_user_by_id(user_id):
                 "id": user['id'],
                 "name": user['name'],
                 "email": user['email'],
-                "role": user['role']
+                "role": user['role'],
+                "dept": user.get('dept', 'General')
             }
     return None
+

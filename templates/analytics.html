@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics - Grievance System{% endblock %}
+
+{% block content %}
+<style>
+    .bar {
+        height: 20px;
+        border-radius: 3px;
+        min-width: 10px;
+    }
+    .bar-category { background: #1a1a1a; }
+    .bar-status { background: #555; }
+    .bar-trend { background: #2196F3; }
+</style>
+<div class="card">
+    <h2>📊 Analytics Dashboard</h2>
+    <p style="color: #666; margin-bottom: 20px;">Data analysis powered by <strong>Pandas</strong> and <strong>Matplotlib</strong></p>
+    
+    {% if not pandas_available %}
+    <div class="alert alert-error">
+        ⚠️ Pandas is not installed. Run: <code>pip install pandas</code> for full analytics.
+    </div>
+    {% endif %}
+    
+    <!-- Resolution Statistics -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>{{ resolution_stats.total }}</h3>
+            <p>Total</p>
+        </div>
+        <div class="stat-card" style="background: #333;">
+            <h3>{{ resolution_stats.pending }}</h3>
+            <p>Pending</p>
+        </div>
+        <div class="stat-card" style="background: #555;">
+            <h3>{{ resolution_stats.in_progress }}</h3>
+            <p>In Progress</p>
+        </div>
+        <div class="stat-card" style="background: #777;">
+            <h3>{{ resolution_stats.resolved }}</h3>
+            <p>Resolved</p>
+        </div>
+        <div class="stat-card" style="background: #4CAF50; color: #fff;">
+            <h3>{{ resolution_stats.resolution_rate }}%</h3>
+            <p>Resolution Rate</p>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+{% if matplotlib_available and charts %}
+<div class="card">
+    <h2>📈 Visual Reports (Matplotlib)</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
+        {% if charts.category %}
+        <div style="text-align: center;">
+            <h3 style="color: #333; margin-bottom: 10px;">Category-wise Bar Chart</h3>
+            <img src="{{ url_for('static', filename=charts.category) }}" alt="Category Chart" 
+                 style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;">
+        </div>
+        {% endif %}
+        
+        {% if charts.status %}
+        <div style="text-align: center;">
+            <h3 style="color: #333; margin-bottom: 10px;">Status Pie Chart</h3>
+            <img src="{{ url_for('static', filename=charts.status) }}" alt="Status Pie Chart" 
+                 style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;">
+        </div>
+        {% endif %}
+        
+        {% if charts.trend %}
+        <div style="text-align: center;">
+            <h3 style="color: #333; margin-bottom: 10px;">Monthly Trend Line Chart</h3>
+            <img src="{{ url_for('static', filename=charts.trend) }}" alt="Monthly Trend" 
+                 style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px;">
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% elif not matplotlib_available %}
+<div class="card">
+    <h2>📈 Visual Reports</h2>
+    <div class="alert alert-error">
+        ⚠️ Matplotlib is not installed. Run: <code>pip install matplotlib</code> for charts.
+    </div>
+</div>
+{% endif %}
+
+<!-- Data Tables -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <!-- Category Analysis -->
+    <div class="card">
+        <h2>📋 Category Analysis</h2>
+        <p style="color: #888; font-size: 0.85rem; margin-bottom: 10px;">Pandas: df.groupby("category").size()</p>
+        {% if category_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Count</th>
+                    <th>Visual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat, count in category_data.items() %}
+                <tr>
+                    <td>{{ cat }}</td>
+                    <td><strong>{{ count }}</strong></td>
+                    <td>
+                        <div class="bar bar-category" data-width="{{ (count / resolution_stats.total * 100)|int }}%"></div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #888; text-align: center; padding: 20px;">No data available</p>
+        {% endif %}
+    </div>
+    
+    <!-- Status Analysis -->
+    <div class="card">
+        <h2>📋 Status Analysis</h2>
+        <p style="color: #888; font-size: 0.85rem; margin-bottom: 10px;">Pandas: df.groupby("status").size()</p>
+        {% if status_data %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Count</th>
+                    <th>Visual</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for status, count in status_data.items() %}
+                <tr>
+                    <td>
+                        <span class="status status-{{ status|lower|replace(' ', '-') }}">{{ status }}</span>
+                    </td>
+                    <td><strong>{{ count }}</strong></td>
+                    <td>
+                        <div class="bar bar-status" data-width="{{ (count / resolution_stats.total * 100)|int }}%"></div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #888; text-align: center; padding: 20px;">No data available</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Monthly Trend -->
+<div class="card">
+    <h2>📅 Monthly Trend</h2>
+    <p style="color: #888; font-size: 0.85rem; margin-bottom: 10px;">Pandas: df.groupby(df['date'].dt.to_period('M')).size()</p>
+    {% if monthly_data %}
+    <table>
+        <thead>
+            <tr>
+                <th>Month</th>
+                <th>Grievances</th>
+                <th>Visual</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for month, count in monthly_data.items() %}
+            <tr>
+                <td>{{ month }}</td>
+                <td><strong>{{ count }}</strong></td>
+                <td>
+                    <div class="bar bar-trend" data-width="{{ count * 50 }}px"></div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #888; text-align: center; padding: 20px;">No data available</p>
+    {% endif %}
+</div>
+
+<div style="text-align: center; margin-top: 20px;">
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+</div>
+<script>
+    document.querySelectorAll('.bar[data-width]').forEach(function(el) {
+        el.style.width = el.getAttribute('data-width');
+    });
+</script>
+{% endblock %}

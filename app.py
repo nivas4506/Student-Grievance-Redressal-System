@@ -1,21 +1,35 @@
 """
 Student Grievance Redressal System - Web Version
-Simple Flask web application
+Flask web application with OOP classes, CSV+JSON storage, and Analytics
+
+Demonstrates:
+- Flask web framework (routes, templates, sessions)
+- OOP classes (Student, Grievance, Admin from models.py)
+- Dual storage (JSON + CSV via file_handler.py)
+- Analytics with Pandas (via analytics.py)
+- Matplotlib chart generation
 """
 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from datetime import datetime
 import os
 
-from file_handler import initialize_data_files, load_users, save_users, load_grievances, save_grievances, get_next_user_id, get_next_grievance_id
+from file_handler import (
+    initialize_data_files, load_users, save_users,
+    load_grievances, save_grievances,
+    get_next_user_id, get_next_grievance_id
+)
 from auth import hash_password, validate_email, email_exists
+from models import Student, Grievance, Admin
+from analytics.analyzer import GrievanceAnalyzer, PANDAS_AVAILABLE
+from analytics.visualization import GrievanceVisualizer, MATPLOTLIB_AVAILABLE
 
 app = Flask(__name__)
 app.secret_key = 'grievance_system_secret_key_2026'
 
-# Categories and Status options
-CATEGORIES = ["Academic", "Hostel", "Faculty", "Infrastructure", "Administrative", "Other"]
-STATUS_OPTIONS = ["Pending", "In Progress", "Resolved", "Rejected"]
+# Categories and Status options (from Grievance OOP class)
+CATEGORIES = Grievance.CATEGORIES
+STATUS_OPTIONS = Grievance.STATUS_OPTIONS
 
 # Initialize data files
 initialize_data_files()
@@ -82,16 +96,20 @@ def register():
         elif password != confirm:
             flash('Passwords do not match.', 'error')
         else:
+            # Create Student object using OOP class
+            user_id = get_next_user_id()
+            student_obj = Student(
+                student_id=user_id,
+                name=name,
+                email=email,
+                password=hash_password(password),
+                dept=request.form.get('dept', 'General')
+            )
+            
             users = load_users()
-            new_user = {
-                'id': get_next_user_id(),
-                'name': name,
-                'email': email,
-                'password': hash_password(password),
-                'role': 'student',
-                'created_at': str(datetime.now().date())
-            }
-            users.append(new_user)
+            user_dict = student_obj.to_dict()
+            user_dict['created_at'] = str(datetime.now().date())
+            users.append(user_dict)
             save_users(users)
             flash('Registration successful! Please login.', 'success')
             return redirect(url_for('login'))
@@ -146,22 +164,19 @@ def submit_grievance():
         elif len(description) < 10:
             flash('Description must be at least 10 characters.', 'error')
         else:
+            # Create Grievance object using OOP class
+            grievance_obj = Grievance(
+                grievance_id=get_next_grievance_id(),
+                student_id=session['user']['id'],
+                student_name=session['user']['name'],
+                category=category,
+                description=description
+            )
+            
             grievances = load_grievances()
-            new_grievance = {
-                'id': get_next_grievance_id(),
-                'student_id': session['user']['id'],
-                'student_name': session['user']['name'],
-                'category': category,
-                'description': description,
-                'status': 'Pending',
-                'response': '',
-                'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'updated_at': '',
-                'resolved_at': ''
-            }
-            grievances.append(new_grievance)
+            grievances.append(grievance_obj.to_dict())
             save_grievances(grievances)
-            flash(f'Grievance submitted! ID: {new_grievance["id"]}', 'success')
+            flash(f'Grievance submitted! ID: {grievance_obj.grievance_id}', 'success')
             return redirect(url_for('student_dashboard'))
     
     return render_template('submit_grievance.html', categories=CATEGORIES, user=session['user'])
@@ -246,23 +261,37 @@ def admin_view_grievance(gid):
         
         if action == 'update_status':
             new_status = request.form.get('status')
-            if new_status in STATUS_OPTIONS:
-                grievance['status'] = new_status
-                grievance['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                if new_status == 'Resolved':
-                    grievance['resolved_at'] = grievance['updated_at']
+            # Use OOP Grievance class for status update
+            grievance_obj = Grievance.from_dict(grievance)
+            success, message = grievance_obj.update_status(new_status)
+            if success:
+                # Update the dict in list
+                for i, g in enumerate(grievances):
+                    if g['id'] == gid:
+                        grievances[i] = grievance_obj.to_dict()
+                        break
                 save_grievances(grievances)
                 flash('Status updated.', 'success')
+                # Reload for display
+                grievance = grievance_obj.to_dict()
+            else:
+                flash(message, 'error')
         
         elif action == 'add_response':
             response = request.form.get('response', '').strip()
-            if len(response) >= 5:
-                grievance['response'] = response
-                grievance['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            # Use OOP Grievance class for adding response
+            grievance_obj = Grievance.from_dict(grievance)
+            success, message = grievance_obj.add_response(response)
+            if success:
+                for i, g in enumerate(grievances):
+                    if g['id'] == gid:
+                        grievances[i] = grievance_obj.to_dict()
+                        break
                 save_grievances(grievances)
                 flash('Response added.', 'success')
+                grievance = grievance_obj.to_dict()
             else:
-                flash('Response must be at least 5 characters.', 'error')
+                flash(message, 'error')
         
         elif action == 'delete':
             grievances = [g for g in grievances if g['id'] != gid]
@@ -271,6 +300,64 @@ def admin_view_grievance(gid):
             return redirect(url_for('admin_dashboard'))
     
     return render_template('admin_grievance.html', grievance=grievance, statuses=STATUS_OPTIONS, user=session['user'])
+
+
+# ==================== ANALYTICS ROUTES ====================
+
+@app.route('/admin/analytics')
+def admin_analytics():
+    """Analytics dashboard with Pandas data and Matplotlib charts"""
+    if 'user' not in session or session['user']['role'] != 'admin':
+        flash('Admin access required.', 'error')
+        return redirect(url_for('login'))
+    
+    # Get analytics data using Pandas (OOP GrievanceAnalyzer class)
+    analyzer = GrievanceAnalyzer()
+    summary = analyzer.get_summary_statistics()
+    
+    resolution_stats = {
+        'total': summary['total_grievances'],
+        'pending': summary['pending_count'],
+        'in_progress': summary['status_breakdown'].get('In Progress', 0),
+        'resolved': summary['status_breakdown'].get('Resolved', 0),
+        'rejected': summary['status_breakdown'].get('Rejected', 0),
+        'resolution_rate': summary['resolution_rate']
+    }
+    category_data = summary['category_breakdown']
+    status_data = summary['status_breakdown']
+    monthly_data = summary['monthly_trend']
+    
+    # Generate charts using Matplotlib (OOP GrievanceVisualizer class)
+    charts = {}
+    if MATPLOTLIB_AVAILABLE:
+        static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+        if not os.path.exists(static_dir):
+            os.makedirs(static_dir)
+        
+        visualizer = GrievanceVisualizer(analyzer)
+        visualizer.output_dir = static_dir
+        
+        path = visualizer.create_category_bar_chart(save=True, show=False)
+        if path:
+            charts['category'] = os.path.basename(path)
+        
+        path = visualizer.create_status_pie_chart(save=True, show=False)
+        if path:
+            charts['status'] = os.path.basename(path)
+        
+        path = visualizer.create_monthly_trend_line(save=True, show=False)
+        if path:
+            charts['trend'] = os.path.basename(path)
+    
+    return render_template('analytics.html',
+                         resolution_stats=resolution_stats,
+                         category_data=category_data,
+                         status_data=status_data,
+                         monthly_data=monthly_data,
+                         charts=charts,
+                         pandas_available=PANDAS_AVAILABLE,
+                         matplotlib_available=MATPLOTLIB_AVAILABLE,
+                         user=session['user'])
 
 
 if __name__ == '__main__':

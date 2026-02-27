@@ -234,6 +234,7 @@
                 <span style="color: white;">{{ session.user.name }} ({{ session.user.role }})</span>
                 {% if session.user.role == 'admin' %}
                     <a href="{{ url_for('admin_dashboard') }}">Dashboard</a>
+                    <a href="{{ url_for('admin_analytics') }}">Analytics</a>
                 {% else %}
                     <a href="{{ url_for('student_dashboard') }}">Dashboard</a>
                     <a href="{{ url_for('submit_grievance') }}">Submit</a>

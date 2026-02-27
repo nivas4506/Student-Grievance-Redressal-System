@@ -1,13 +1,14 @@
 """
 Student Module
 Handles all student-related operations for grievance submission and tracking.
-Demonstrates: Functions, lists, dictionaries, iteration, filtering
+Demonstrates: OOP (Grievance class), functions, lists, dictionaries, iteration, filtering
 """
 
 from datetime import datetime
 from file_handler import load_grievances, save_grievances, get_next_grievance_id
+from models import Grievance
 
-# Grievance categories
+# Grievance categories (from Grievance class)
 CATEGORIES = {
     "1": "Academic",
     "2": "Hostel",
@@ -17,8 +18,8 @@ CATEGORIES = {
     "6": "Other"
 }
 
-# Status options
-STATUS_OPTIONS = ["Pending", "In Progress", "Resolved", "Rejected"]
+# Status options (from Grievance class)
+STATUS_OPTIONS = Grievance.STATUS_OPTIONS
 
 
 def display_categories():
@@ -31,7 +32,7 @@ def display_categories():
 
 def submit_grievance(student_id, student_name):
     """
-    Submit a new grievance.
+    Submit a new grievance using the Grievance OOP class.
     
     Args:
         student_id (int): ID of the student submitting
@@ -39,6 +40,8 @@ def submit_grievance(student_id, student_name):
         
     Returns:
         tuple: (success: bool, message: str)
+        
+    Demonstrates: OOP object creation, to_dict() conversion, file storage
     """
     print("\n" + "="*50)
     print("         SUBMIT NEW GRIEVANCE")
@@ -69,25 +72,21 @@ def submit_grievance(student_id, student_name):
     if len(description) < 10:
         return False, "Description must be at least 10 characters."
     
-    # Create grievance dictionary
-    grievances = load_grievances()
-    new_grievance = {
-        "id": get_next_grievance_id(),
-        "student_id": student_id,
-        "student_name": student_name,
-        "category": category,
-        "description": description,
-        "status": "Pending",
-        "response": "",
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "updated_at": "",
-        "resolved_at": ""
-    }
+    # Create Grievance object using OOP class
+    grievance_obj = Grievance(
+        grievance_id=get_next_grievance_id(),
+        student_id=student_id,
+        student_name=student_name,
+        category=category,
+        description=description
+    )
     
-    # Save grievance
-    grievances.append(new_grievance)
+    # Convert to dict and save
+    grievances = load_grievances()
+    grievances.append(grievance_obj.to_dict())
+    
     if save_grievances(grievances):
-        return True, f"Grievance submitted successfully! Your Grievance ID is: {new_grievance['id']}"
+        return True, f"Grievance submitted successfully! Your Grievance ID is: {grievance_obj.grievance_id}"
     else:
         return False, "Error saving grievance."
 

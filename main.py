@@ -4,14 +4,16 @@ Main Entry Point
 
 A menu-driven console application for managing student grievances.
 Students can submit and track grievances.
-Administrators can view, search, update, and delete grievances.
+Administrators can view, search, update, delete grievances and view analytics.
 
 Demonstrates:
 - Python functions and modules
-- File handling (JSON)
+- OOP classes (Record, Student, Grievance, Admin)
+- File handling (JSON + CSV dual storage)
 - Data structures (lists, dictionaries)
 - Control flow (loops, conditionals)
 - Input validation
+- Analytics with Pandas and Matplotlib
 """
 
 import os
@@ -20,6 +22,7 @@ import sys
 # Import custom modules
 from file_handler import initialize_data_files
 from auth import register_user, login_user
+from models import Student, Grievance, Admin
 from student import (
     submit_grievance,
     view_my_grievances,
@@ -45,6 +48,7 @@ from admin import (
     STATUS_OPTIONS,
     CATEGORIES
 )
+from analytics import GrievanceAnalyzer, GrievanceVisualizer
 
 
 # Global variable to store logged-in user
@@ -102,7 +106,8 @@ def display_admin_menu(user_name):
     print("  6. Add Response to Grievance")
     print("  7. Delete Grievance")
     print("  8. View Statistics")
-    print("  9. Logout")
+    print("  9. Analytics Report (Pandas + Charts)")
+    print("  10. Logout")
     print()
 
 
@@ -215,7 +220,7 @@ def admin_menu_loop():
         display_banner()
         display_admin_menu(current_user['name'])
         
-        choice = input("Enter your choice (1-9): ").strip()
+        choice = input("Enter your choice (1-10): ").strip()
         
         if choice == "1":
             # View all grievances
@@ -374,6 +379,22 @@ def admin_menu_loop():
             pause()
             
         elif choice == "9":
+            # Analytics Report (Pandas + Matplotlib)
+            clear_screen()
+            analyzer = GrievanceAnalyzer()
+            print(analyzer.generate_report())
+            
+            # Generate charts
+            try:
+                visualizer = GrievanceVisualizer(analyzer)
+                saved = visualizer.generate_all_charts(save=True, show=False)
+                if saved:
+                    print(f"\n[INFO] {len(saved)} chart(s) saved to data/charts/")
+            except Exception as e:
+                print(f"\n[INFO] Charts not generated: {e}")
+            pause()
+            
+        elif choice == "10":
             # Logout
             print(f"\nGoodbye, {current_user['name']}!")
             current_user = None

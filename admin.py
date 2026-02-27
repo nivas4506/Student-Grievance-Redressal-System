@@ -1,12 +1,23 @@
 """
 Admin Module
 Handles all administrator operations for managing grievances.
-Demonstrates: Functions, searching, filtering, CRUD operations, data structures
+Demonstrates: OOP (Admin, Grievance classes), functions, searching, filtering, CRUD operations
 """
 
 from datetime import datetime
 from file_handler import load_grievances, save_grievances
-from student import CATEGORIES, STATUS_OPTIONS
+from models import Grievance, Admin
+
+# Use class-level constants from Grievance model
+CATEGORIES = {
+    "1": "Academic",
+    "2": "Hostel",
+    "3": "Faculty",
+    "4": "Infrastructure",
+    "5": "Administrative",
+    "6": "Other"
+}
+STATUS_OPTIONS = Grievance.STATUS_OPTIONS
 
 
 def view_all_grievances():
@@ -119,7 +130,7 @@ def get_grievance_by_id(grievance_id):
 
 def update_grievance_status(grievance_id, new_status):
     """
-    Update the status of a grievance.
+    Update the status of a grievance using OOP Grievance class.
     
     Args:
         grievance_id (int): ID of the grievance
@@ -127,32 +138,32 @@ def update_grievance_status(grievance_id, new_status):
         
     Returns:
         tuple: (success: bool, message: str)
+        
+    Demonstrates: OOP - converting dict to Grievance object, using class methods
     """
-    if new_status not in STATUS_OPTIONS:
-        return False, f"Invalid status. Choose from: {', '.join(STATUS_OPTIONS)}"
-    
     grievances = load_grievances()
     
-    for g in grievances:
+    for i, g in enumerate(grievances):
         if g['id'] == grievance_id:
-            old_status = g['status']
-            g['status'] = new_status
-            g['updated_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Convert to Grievance object for OOP operations
+            grievance_obj = Grievance.from_dict(g)
+            success, message = grievance_obj.update_status(new_status)
             
-            if new_status == "Resolved":
-                g['resolved_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            
-            if save_grievances(grievances):
-                return True, f"Status updated from '{old_status}' to '{new_status}'."
-            else:
-                return False, "Error saving changes."
+            if success:
+                # Convert back to dict and save
+                grievances[i] = grievance_obj.to_dict()
+                if save_grievances(grievances):
+                    return True, message
+                else:
+                    return False, "Error saving changes."
+            return False, message
     
     return False, "Grievance not found."
 
 
 def add_response(grievance_id, response_text):
     """
-    Add or update admin response to a grievance.
+    Add or update admin response to a grievance using OOP Grievance class.
     
     Args:
         grievance_id (int): ID of the grievance
@@ -160,21 +171,24 @@ def add_response(grievance_id, response_text):
         
     Returns:
         tuple: (success: bool, message: str)
+        
+    Demonstrates: OOP - Grievance.add_response() method
     """
-    if not response_text or len(response_text) < 5:
-        return False, "Response must be at least 5 characters."
-    
     grievances = load_grievances()
     
-    for g in grievances:
+    for i, g in enumerate(grievances):
         if g['id'] == grievance_id:
-            g['response'] = response_text
-            g['updated_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            # Convert to Grievance object for OOP operations
+            grievance_obj = Grievance.from_dict(g)
+            success, message = grievance_obj.add_response(response_text)
             
-            if save_grievances(grievances):
-                return True, "Response added successfully."
-            else:
-                return False, "Error saving response."
+            if success:
+                grievances[i] = grievance_obj.to_dict()
+                if save_grievances(grievances):
+                    return True, message
+                else:
+                    return False, "Error saving response."
+            return False, message
     
     return False, "Grievance not found."
 

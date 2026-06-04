@@ -7,9 +7,13 @@ Demonstrates: File handling, JSON operations, CSV operations, error handling, ex
 import json
 import csv
 import os
+import shutil
 
-# Data directory path
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data')
+# Data directory path. Vercel serverless functions can only write to /tmp at
+# runtime, so deployed instances use an ephemeral data directory there.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join('/tmp', 'grievance-data') if os.environ.get('VERCEL') else os.path.join(BASE_DIR, 'data')
+SEED_DATA_DIR = os.path.join(BASE_DIR, 'data')
 USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 GRIEVANCES_FILE = os.path.join(DATA_DIR, 'grievances.json')
 GRIEVANCES_CSV = os.path.join(DATA_DIR, 'grievances.csv')
@@ -33,6 +37,13 @@ def initialize_data_files():
     if not os.path.exists(DATA_DIR):
         os.makedirs(DATA_DIR)
         print("[INFO] Created data directory.")
+
+    if DATA_DIR != SEED_DATA_DIR:
+        for filename in ('users.json', 'grievances.json', 'grievances.csv'):
+            source = os.path.join(SEED_DATA_DIR, filename)
+            target = os.path.join(DATA_DIR, filename)
+            if os.path.exists(source) and not os.path.exists(target):
+                shutil.copyfile(source, target)
     
     # Initialize users.json with default admin
     if not os.path.exists(USERS_FILE):

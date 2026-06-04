@@ -116,9 +116,7 @@ Manage all grievances with search and filter options.
 
 ## Contributors
 
-- Nivas(leader, ocder)
-- Nemalipuri Bhavya Sri(Ideas for the teck stack)
-- Ganesh (Manages the team)
+- Nivas
 
 ## License
 
